@@ -2,7 +2,7 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException,
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
-import logging
+import time, logging
 
 logger = logging.getLogger()
 
@@ -34,9 +34,11 @@ def wait_until_panel_body_value_appears(element, timeout):
 def get_polii(details, panel):
 
     # Prepare a dictionary for POLII
+    """
     POLII = {
         "name": None,                       # Name
         "license_no": None,                 # License No.
+        "license_type": None,               # License Type
         "lines_of_business": None,          # Line(s) of Business the Licensed Insurace may carry on
         "license_period:": None,            # License Period
         "business_address": None,           # Business Address
@@ -46,18 +48,36 @@ def get_polii(details, panel):
         "email_address": None,              # Email Address
         "responsible_officers": None        # Responsible Officer(s)
     }
+    """
+
+    POLII = {
+        "items": []
+    }
 
     # Get panel's heading and body
     panel_heading = panel.find_element(By.CLASS_NAME, "panel-heading")  
     panel_body = panel.find_element(By.CLASS_NAME, "panel-body")
+   
+    while True:
+        time.sleep(1)
+        logger.info("Trying...")
+        try:
+            rows = WebDriverWait(panel_body, 10).until(
+                expected_conditions.presence_of_all_elements_located((By.CLASS_NAME, "row"))
+            )
 
-    rows = panel_body.find_elements(By.CLASS_NAME, "row")
+            if len(rows) != 11:
+                continue
 
-    # Iterate through the dictionary and populate using rows
-    for key_name, row in zip(list(POLII.keys()), rows):
+            break
+        except TimeoutException:
+            continue 
+
+    # Populate items with rows
+    for row in rows:
         panel_body_label = row.find_element(By.TAG_NAME, "label")
         panel_body_value = wait_until_panel_body_value_appears(row, 10)
-        POLII[key_name] = (panel_body_label.text, panel_body_value.text)
+        POLII["items"].append((panel_body_label.text, panel_body_value.text))
 
     return POLII
 
