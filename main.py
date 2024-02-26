@@ -5,9 +5,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 import time, base64, time, logging, json, csv, os
-from modules.constants import *
-from modules.firm import *
+from modules.firmdetails import FirmDetails
 from modules.captcha import solve_captcha
+from modules.constants import *
+from modules.utils import *
+from modules.firm import *
 import numpy as np
 import cv2
 
@@ -23,12 +25,6 @@ driver = webdriver.Firefox(options=options)
 driver.get(BASE_URL)
 
 # This is for the 'Licensed Insurance Agency/Licensed Insurance Broker Company'
-
-def wait_until(instance, condition, timeout, error_message=None):
-    try:
-        return WebDriverWait(instance, timeout).until(condition)
-    except TimeoutException:
-        if isinstance(error_message, str): logger.error(error_message)
 
 # Wait till the page is fully loaded before clicking 'Search for Firm' link
 try:
@@ -76,24 +72,16 @@ logger.info("Selected 'License Number' in Search Criteria section")
 
 firms_dir = os.path.join(DATA_DIR, "firms")
 
-def generate_sequential_license_numbers():
-    for prefix1 in range(ord('F'), ord('G')+1):
-        for prefix2 in range(ord('A'), ord('Z')+1):
-            for suffix in range(1001, 10000):
-                yield f"{chr(prefix1)}{chr(prefix2)}{suffix}"
-
 for license_no in generate_sequential_license_numbers():
 
     logger.info("-"*15)
     search_criteria_input_txt.clear()
     search_criteria_input_txt.send_keys(license_no)
     logger.info(f"Entered license number '{license_no}'")
-    # logger.info(f"LICENSE NUMBER: '{license_no}'")
 
     captcha_image = driver.find_element(By.ID, "stickyImg")
     locator = (By.XPATH, '/html/body/div/div/div/div/div[1]/form/div/div/div/div/div/div[6]/fieldset/div/div[2]/div[3]/input')
     captcha_code_input = WebDriverWait(driver, 20).until(expected_conditions.presence_of_element_located(locator))
-
 
     while captcha_image.is_displayed():
 
@@ -229,14 +217,7 @@ for license_no in generate_sequential_license_numbers():
     # Register of Licensed Insurance Intermediaries (Firm)
 
     # Prepare a dictionary for overall
-    details = {
-        "POLII": None,
-        "AWCAP": None,
-        "PL": None,
-        "PDAL5": None,
-        "N": None,
-        "R": None,
-    } 
+    firmdetails = FirmDetails()
 
     locator = (By.XPATH, "//div[contains(@class, 'containerSearch')]")
     container_search = wait_until(
@@ -249,28 +230,30 @@ for license_no in generate_sequential_license_numbers():
     if container_search:
 
         container_search_panels = container_search.find_elements(By.CLASS_NAME, "panel")
-        details["POLII"] = get_polii(details, container_search_panels[0])
-        details["AWCAP"] = get_awcap(details, container_search_panels[1])
-        details["PL"] = get_pl(details, container_search_panels[2])
-        details["PDAL5"] = get_pdal5(details, container_search_panels[4])
-        details["N"] = get_n(details, container_search_panels[5])
+        get_polii(firmdetails, container_search_panels[0])
+        get_awcap(firmdetails, container_search_panels[1])
+        get_pl(firmdetails, container_search_panels[2])
+        get_pdal5(firmdetails, container_search_panels[4])
+        get_n(firmdetails, container_search_panels[5])
 
         # Load panel elements again. For some reason, the last panel gets 'StaleElementException' when it is not reloaded.
         container_search_panels = container_search.find_elements(By.CLASS_NAME, "panel")
-        details["R"] = get_r(details, container_search_panels[6])
+        get_r(firmdetails, container_search_panels[6])
 
     # Temporarily show the retrieved details
     # logger.info(json.dumps(details, indent=4))
 
     # Save data
 
+    """
     # Create directory if not exists
     output_dir = os.path.join(firms_dir, license_no)
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
+    """
 
-    header = [item[0] for item in details["POLII"]["items"]]
-    row = dict(details["POLII"]["items"])
+    header = [item[0] for item in firmdetails.POLII["items"]]
+    row = dict(firmdetails.POLII["items"])
     if not os.path.exists("firms_polii.csv"):
         with open(os.path.join("firms_polii.csv"), "w") as file:
             writer = csv.DictWriter(file, fieldnames=header)
