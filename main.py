@@ -17,6 +17,7 @@ import cv2
 logger = logging.getLogger(__name__)
 logging.basicConfig(format="%(asctime)s [%(levelname)s] --- %(message)s", level=logging.INFO)
 
+# Initialize Web Driver Options
 options = Options()
 options.add_argument("-headless")
 
@@ -27,37 +28,40 @@ driver.get(BASE_URL)
 # This is for the 'Licensed Insurance Agency/Licensed Insurance Broker Company'
 
 # Wait till the page is fully loaded before clicking 'Search for Firm' link
-try:
-    # search_for_firm_button = driver.find_element(By.LINK_TEXT, 'Search for Firm')
-    search_for_firm_button = WebDriverWait(driver, 3).until(
-        expected_conditions.presence_of_element_located((By.LINK_TEXT, 'Search for Firm'))
-    )
-    logger.info("Page is ready!")
-except TimeoutException:
+locator = (By.LINK_TEXT, 'Search for Firm')
+search_for_firm_button = wait_until(driver, expected_conditions.presence_of_element_located(locator), 20)
+
+if search_for_firm_button is None:
     logger.error("Loading took too much time!")
     driver.quit()
     # This is temporary
     logger.info("Press enter to quit...")
     exit()
 
+logger.info("Page is ready!")
+
 # Click 'Search for Firm' link
 search_for_firm_button.click()
 
 # Wait till the page is fully loaded before filling up the form
-try:
-    license_status_all_checkbox = WebDriverWait(driver, 20).until(
-            expected_conditions.presence_of_element_located((By.ID, 'licenseStatusc'))
-    )
-    search_criteria_license_number_checkbox = WebDriverWait(driver, 20).until(
-            expected_conditions.presence_of_element_located((By.ID, 'searchBy3'))
-    )
-    search_criteria_input_txt = WebDriverWait(driver, 20).until(
-            expected_conditions.presence_of_element_located((By.NAME, 'searchInputTxt'))
-    )
-    search_button = WebDriverWait(driver, 20).until(
-            expected_conditions.presence_of_element_located((By.XPATH, '/html/body/div/div/div/div/div[1]/form/div/div/div/div/div/div[7]/div[1]/div/div/div/button'))
-    )
-except TimeoutException:
+locator = (By.ID, 'licenseStatusc')
+license_status_all_checkbox = wait_until(driver, expected_conditions.presence_of_element_located(locator), 20)
+
+locator = (By.ID, 'searchBy3')
+search_criteria_license_number_checkbox = wait_until(driver, expected_conditions.presence_of_element_located(locator), 20)
+
+locator = (By.NAME, 'searchInputTxt')
+search_criteria_input_txt = wait_until(driver, expected_conditions.presence_of_element_located(locator), 20)
+
+locator = (By.XPATH, '/html/body/div/div/div/div/div[1]/form/div/div/div/div/div/div[7]/div[1]/div/div/div/button')
+search_button = wait_until(driver, expected_conditions.presence_of_element_located(locator), 20)
+
+if any(map(lambda element: element is None, [
+        license_status_all_checkbox, 
+        search_criteria_license_number_checkbox, 
+        search_criteria_input_txt, 
+        search_button
+    ])):
     logger.error("Loading took too much time!")
     driver.quit()
     # This is temporary
@@ -81,7 +85,7 @@ for license_no in generate_sequential_license_numbers():
 
     captcha_image = driver.find_element(By.ID, "stickyImg")
     locator = (By.XPATH, '/html/body/div/div/div/div/div[1]/form/div/div/div/div/div/div[6]/fieldset/div/div[2]/div[3]/input')
-    captcha_code_input = WebDriverWait(driver, 20).until(expected_conditions.presence_of_element_located(locator))
+    captcha_code_input = wait_until(driver, expected_conditions.presence_of_element_located(locator), 20)
 
     while captcha_image.is_displayed():
 
@@ -107,24 +111,18 @@ for license_no in generate_sequential_license_numbers():
             cnv.getContext('2d').drawImage(ele, 0, 0);
             return cnv.toDataURL('image/jpeg').substring(22);
         """, captcha_image)
-
-        # Convert base64 image to NumPy array
-        buffer = base64.b64decode(img_base64)
-        npimg = np.frombuffer(buffer, dtype=np.uint8)
-        decoded_image = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
-
-        # Detect and read the captcha image ...
+        
+        # Read and solve the captcha image
+        decoded_image = base64ToImage(img_base64)
         captcha_code = solve_captcha(decoded_image)
 
         logger.info("Entered Captcha Code: "+ captcha_code)
 
-        # if captcha_image.is_displayed(): logger.info(f"SOLVING CAPTCHA: {captcha_code}")
-
-        try:
-            locator = (By.XPATH, '/html/body/div/div/div/div/div[1]/form/div/div/div/div/div/div[6]/fieldset/div/div[2]/div[3]/input')
-            captcha_code_input = WebDriverWait(driver, 3).until(expected_conditions.element_to_be_clickable(locator))
-        except TimeoutException:
-            break
+        locator = (
+            By.XPATH, 
+            '/html/body/div/div/div/div/div[1]/form/div/div/div/div/div/div[6]/fieldset/div/div[2]/div[3]/input'
+        )
+        captcha_code_input = wait_until(driver, expected_conditions.element_to_be_clickable(locator), 3)
 
         # This is temporary
         captcha_code_input.send_keys(captcha_code)
@@ -133,9 +131,7 @@ for license_no in generate_sequential_license_numbers():
         search_button.click()
         logger.info("Clicked 'Search' button")
 
-        # time.sleep(2)
-
-        # driver.implicitly_wait(3)
+        time.sleep(2)
 
         # Get the element containing a text of 'Captcha code does not match.'
         locator = (By.XPATH, ".//*[contains(text(), 'Captcha code does not match.')]")
@@ -144,8 +140,6 @@ for license_no in generate_sequential_license_numbers():
             condition = expected_conditions.presence_of_element_located(locator),
             timeout = 3
         )
-
-        # driver.implicitly_wait(5)
         
         if captcha_does_not_match_error:
             logger.error("Captcha code does not match.")
@@ -170,7 +164,7 @@ for license_no in generate_sequential_license_numbers():
         # Click 'Search' button
         search_button.click()
         logger.info("Clicked 'Search' button")
-        time.sleep(3)
+        time.sleep(2)
 
     search_result_buttons = []
 
@@ -197,8 +191,6 @@ for license_no in generate_sequential_license_numbers():
 
     # Before clicking the button to open popup, store the current window handle
     main_window = driver.current_window_handle
-
-    # driver.execute_script("arguments[0].scrollIntoView();", search_result_buttons[0])
 
     # Click the 'Click for details' button
     search_result_buttons[0].click()
@@ -240,35 +232,34 @@ for license_no in generate_sequential_license_numbers():
         container_search_panels = container_search.find_elements(By.CLASS_NAME, "panel")
         get_r(firmdetails, container_search_panels[6])
 
-    # Temporarily show the retrieved details
-    # logger.info(json.dumps(details, indent=4))
+        # Save data
 
-    # Save data
+        """
+        # Create directory if not exists
+        output_dir = os.path.join(firms_dir, license_no)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        """
 
-    """
-    # Create directory if not exists
-    output_dir = os.path.join(firms_dir, license_no)
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
-    """
+        header = [item[0] for item in firmdetails.POLII["items"]]
+        row = dict(firmdetails.POLII["items"])
+        if not os.path.exists("firms_polii.csv"):
+            with open(os.path.join("firms_polii.csv"), "w") as file:
+                writer = csv.DictWriter(file, fieldnames=header)
+                writer.writeheader()
+                writer.writerow(row)
+        else:
+            with open(os.path.join("firms_polii.csv"), "a") as file:
+                writer = csv.DictWriter(file, fieldnames=header)
+                writer.writerow(row)
 
-    header = [item[0] for item in firmdetails.POLII["items"]]
-    row = dict(firmdetails.POLII["items"])
-    if not os.path.exists("firms_polii.csv"):
-        with open(os.path.join("firms_polii.csv"), "w") as file:
-            writer = csv.DictWriter(file, fieldnames=header)
-            writer.writeheader()
-            writer.writerow(row)
-    else:
-        with open(os.path.join("firms_polii.csv"), "a") as file:
-            writer = csv.DictWriter(file, fieldnames=header)
-            writer.writerow(row)
-
-    logger.info("Done.")
+        logger.info("Done.")
 
     # Close the popup window and switch back to the main window
     driver.close()
     driver.switch_to.window(main_window)
+
+    # ---------------------------------------------------------------------------------------------
 
 # This is temporary
 input("Press enter to quit...")
