@@ -244,12 +244,12 @@ for license_no in generate_sequential_license_numbers():
         header = [item[0] for item in firmdetails.POLII["items"]]
         row = dict(firmdetails.POLII["items"])
         if not os.path.exists("firms_polii.csv"):
-            with open(os.path.join("firms_polii.csv"), "w") as file:
+            with open(os.path.join("firms_polii.csv"), "w", encoding="utf-8") as file:
                 writer = csv.DictWriter(file, fieldnames=header)
                 writer.writeheader()
                 writer.writerow(row)
         else:
-            with open(os.path.join("firms_polii.csv"), "a") as file:
+            with open(os.path.join("firms_polii.csv"), "a", encoding="utf-8") as file:
                 writer = csv.DictWriter(file, fieldnames=header)
                 writer.writerow(row)
 
