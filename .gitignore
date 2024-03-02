@@ -3,3 +3,6 @@ __pycache__/
 *.png
 *.pdf
 *.csv
+*.sqlite
+*.sqlite3
+*.db
