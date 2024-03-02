@@ -1,0 +1,1 @@
+# Insurance Authority Scraper
