@@ -19,16 +19,14 @@ def get_polii(details, panel):
     # Get panel's heading and body
     panel_heading = panel.find_element(By.CLASS_NAME, "panel-heading")  
     panel_body = panel.find_element(By.CLASS_NAME, "panel-body")
-   
+    
     while True:
         time.sleep(1)
-        logger.info("Trying...")
+        logger.debug("Trying...")
         try:
             rows = WebDriverWait(panel_body, 20).until(
                 expected_conditions.presence_of_all_elements_located((By.CLASS_NAME, "row"))
             )
-            if len(rows) != 11:
-                continue
             break
         except TimeoutException:
             continue 
@@ -59,11 +57,7 @@ def get_awcap(details, panel):
 
     # Prepare a dictionary for AWCAP
     details.AWCAP = {
-        "column_headers": [
-            "Name of Appointing Principal(s)", 
-            "Line(s) of Business which the Licenced Insurance Intermediary is appointed by the Appointing Principal to carry on",
-            "Date of Appointment"
-        ],
+        "header_columns": [],
         "data_cells": []
     }
 
@@ -74,16 +68,20 @@ def get_awcap(details, panel):
     try:
         panel_table = panel.find_element(By.CLASS_NAME, "table")
     except NoSuchElementException: 
-        logger.info("No table found in 'Particulars of Licensed Insurance Intermediary's Appointment with Current Appointing Principal(s)'")
+        logger.debug("No table found in 'Particulars of Licensed Insurance Intermediary's Appointment with Current Appointing Principal(s)'")
         return None
-
+    
     rows = panel_table.find_elements(By.TAG_NAME, "tr")
 
+    # Obtain header columns
+    for header_row in rows:
+        header_columns = header_row.find_elements(By.TAG_NAME, "th")
+        if len(header_columns) > 0: details.AWCAP['header_columns'].append(tuple([header_column.text for header_column in header_columns]))
+
     # Iterate through the data cells
-    for row in rows:
-        data_cells = row.find_elements(By.TAG_NAME, "td")
-        if len(data_cells) > 0:
-            details.AWCAP["data_cells"].append(tuple([data_cell.text for data_cell in data_cells]))
+    for data_row in rows:
+        data_cells = data_row.find_elements(By.TAG_NAME, "td")
+        if len(data_cells) > 0: details.AWCAP["data_cells"].append(tuple([data_cell.text for data_cell in data_cells]))
 
 # ---------------------------------------------------------------------------------------------
 # PL - Details of Licensed Insurance Intermediary's Previous Licence
@@ -91,13 +89,7 @@ def get_pl(details, panel):
 
     # Prepare a dictionary for PL
     details.PL = {
-        "column_headers": [
-            "Licence Type",
-            "Licence Period",
-            "Name of Appointing Principal(s)",
-            "Line(s) of Business which the Licensed Insurance Intermediary was (appointed by the Appointing Principal) or (granted by the Insurance Authority) to carry on",
-            "Date of (Appointment) or (Granting) and Termination",
-        ],
+        "header_columns": [],
         "data_cells": []
     }
 
@@ -111,16 +103,20 @@ def get_pl(details, panel):
     try:
         panel_table = panel.find_element(By.CLASS_NAME, "table")
     except NoSuchElementException: 
-        logger.info("No table found in 'Details of Licensed Insurance Intermediary's Previous Licence'")
+        logger.debug("No table found in 'Details of Licensed Insurance Intermediary's Previous Licence'")
         return
 
     rows = panel_table.find_elements(By.TAG_NAME, "tr")
+    
+    # Obtain header columns
+    for header_row in rows:
+        header_columns = header_row.find_elements(By.TAG_NAME, "th")
+        if len(header_columns) > 0: details.PL['header_columns'].append(tuple([header_column.text for header_column in header_columns]))
 
     # Iterate through the data cells
     for row in rows:
         data_cells = row.find_elements(By.TAG_NAME, "td")
-        if len(data_cells) > 0:
-            details.PL["data_cells"].append(tuple([data_cell.text for data_cell in data_cells]))
+        if len(data_cells) > 0: details.PL["data_cells"].append(tuple([data_cell.text for data_cell in data_cells]))
 
 # ---------------------------------------------------------------------------------------------
 # PDAL5 - Public Disciplinary Actions taken in the Last 5 Years
@@ -128,11 +124,7 @@ def get_pdal5(details, panel):
 
     # Prepare a dictionary for PDAL5
     details.PDAL5 = {
-        "column_headers": [
-            "Date of Action",
-            "Action Taken",
-            "Press Release"
-        ],
+        "header_columns": [],
         "data_cells": []
     }
 
@@ -143,16 +135,20 @@ def get_pdal5(details, panel):
     try:
         panel_table = panel.find_element(By.CLASS_NAME, "table")
     except NoSuchElementException: 
-        logger.info("No table found in 'Public Disciplinary Actions taken in the Last 5 Years'")
+        logger.debug("No table found in 'Public Disciplinary Actions taken in the Last 5 Years'")
         return
 
     rows = panel_table.find_elements(By.TAG_NAME, "tr")
 
+    # Obtain header columns
+    for header_row in rows:
+        header_columns = header_row.find_elements(By.TAG_NAME, "th")
+        if len(header_columns) > 0: details.PDAL5['header_columns'].append(tuple([header_column.text for header_column in header_columns]))
+
     # Iterate through the data cells
     for row in rows:
         data_cells = row.find_elements(By.TAG_NAME, "td")
-        if len(data_cells) > 0:
-            details.PDAL5["data_cells"].append(tuple([data_cell.text for data_cell in data_cells]))
+        if len(data_cells) > 0: details.PDAL5["data_cells"].append(tuple([data_cell.text for data_cell in data_cells]))
 
 # ---------------------------------------------------------------------------------------------
 # N - Notes

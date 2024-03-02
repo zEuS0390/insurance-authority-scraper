@@ -1,4 +1,4 @@
-class FirmDetails:
+class Details:
     
     def __init__(self):
         self._POLII = None
