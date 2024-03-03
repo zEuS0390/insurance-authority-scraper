@@ -3,12 +3,12 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
-from modules.details import Details
 from modules.captcha import solve_captcha
-import time, time, logging, csv, os
+from modules.details import Details
 from modules.constants import *
 from modules.utils import *
 from modules.getdetails import *
+import time, logging, os
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -29,8 +29,6 @@ def execute(select):
     if select == 'firm': is_firm = True
     elif select == 'individual': is_firm = False
     else: raise ValueError("select parameter must be 'firm' or 'individual'")
-
-    output_filename = 'firms.csv' if is_firm else 'individuals.csv'
 
     locator = (By.LINK_TEXT, 'Search for Firm' if is_firm else 'Search for Individual')
     search_for_individual_button = wait_until(driver, expected_conditions.presence_of_element_located(locator), 20)
@@ -187,10 +185,10 @@ def execute(select):
                     expected_conditions.presence_of_all_elements_located((By.TAG_NAME, "tr"))
             )
             if len(rows) > 1: 
-                data_cells = WebDriverWait(rows[1], 60).until(
+                data_row = WebDriverWait(rows[1], 60).until(
                         expected_conditions.presence_of_all_elements_located((By.TAG_NAME, "td"))
                 )
-                if len(data_cells) > 0: search_result_buttons.append(data_cells[-1])
+                if len(data_row) > 0: search_result_buttons.append(data_row[-1])
 
         # Skip if the search result is empty
         if len(search_result_buttons) == 0: continue
@@ -225,6 +223,7 @@ def execute(select):
         if container_search:
 
             container_search_panels = container_search.find_elements(By.CLASS_NAME, "panel")
+
             get_polii(details, container_search_panels[0])
             get_awcap(details, container_search_panels[1])
             get_pl(details, container_search_panels[2])
@@ -235,24 +234,17 @@ def execute(select):
             container_search_panels = container_search.find_elements(By.CLASS_NAME, "panel")
             get_r(details, container_search_panels[6])
 
-            # Save data
+            output_dir = os.path.join(DATA_DIR, 'firms' if is_firm else 'individuals')
+            if not os.path.exists(output_dir): os.makedirs(output_dir)
 
-            header = [item[0] for item in details.POLII["items"]] + ["Remark",]
-            polii = dict(details.POLII["items"])
-            r = {"Remark": "\n".join([f"{no}. {item}" for no, item in enumerate(details.R["items"], start=1)])}
-            row = {**polii, **r}
-
-            # Write header columns if the file is newly created
-            if not os.path.exists(output_filename):
-                with open(os.path.join(output_filename), "a", newline='', encoding="utf-8") as file:
-                    writer = csv.DictWriter(file, fieldnames=header)
-                    writer.writeheader()
-
-            # Write data
-            with open(os.path.join(output_filename), "a", newline='', encoding="utf-8") as file:
-                writer = csv.DictWriter(file, fieldnames=header)
-                writer.writerow(row)
-
+            header = [item[0] for item in details.POLII["items"]]
+            row = dict(details.POLII["items"])
+            generateCSV(header, row, os.path.join(output_dir, 'polii.csv'))
+            generateCSVFromTable(license_no, details, 'AWCAP', os.path.join(output_dir, 'awcap.csv'))
+            generateCSVFromTable(license_no, details, 'PL', os.path.join(output_dir, 'pl.csv'))
+            generateCSVFromTable(license_no, details, 'PDAL5', os.path.join(output_dir, 'pdal5.csv'))
+            generateCSVFromTable(license_no, details, 'N', os.path.join(output_dir, 'n.csv'))
+                
             logger.debug("Done.")
 
         # Close the popup window and switch back to the main window
