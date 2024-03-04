@@ -2,7 +2,7 @@ import pytesseract  # Importing the pytesseract library for OCR (Optical Charact
 import numpy as np  # Importing numpy library for numerical operations
 import cv2  # Importing OpenCV library for image processing
 
-def solve_captcha(img):
+def ocr_with_color_filtering(img: np.ndarray) -> str:
     # Resize the input image to a fixed size for consistent processing
     img = cv2.resize(img, (1000, 320))
 
