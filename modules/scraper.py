@@ -12,10 +12,10 @@ class Scraper:
 
     # Methods:
     #     select                    (name: str)
-    #     decode_captcha_image      (captcha_image: np.ndarray) -> str
-    #     enter_captcha_code        (captcha_code: str)
-    #     solve_captcha             ()
-    #     scrap_details             ()
+    #     _decode_captcha_image      (captcha_image: np.ndarray) -> str
+    #     _enter_captcha_code        (captcha_code: str)
+    #     _solve_captcha             ()
+    #     _scrap_details             ()
     #     scrap                     (license_no: str)
     #     quit                      ()
 
@@ -85,7 +85,7 @@ class Scraper:
         search_criteria_license_number_checkbox.click()
         logger.debug("Selected 'License Number' in Search Criteria section")
 
-    def decode_captcha_image(self, captcha_image: np.ndarray) -> str:
+    def _decode_captcha_image(self, captcha_image: np.ndarray) -> str:
         capture_catpcha_image_jscode = """
             let ele = arguments[0];
             let cnv = document.createElement('canvas');
@@ -113,7 +113,7 @@ class Scraper:
         captcha_code = ocr_with_color_filtering(decoded_image)
         return captcha_code
     
-    def enter_captcha_code(self, captcha_code):
+    def _enter_captcha_code(self, captcha_code):
 
         locator = (
             By.XPATH, 
@@ -129,17 +129,17 @@ class Scraper:
         self.search_button.click()
         logger.debug("Clicked 'Search' button")
 
-    def solve_captcha(self):
+    def _solve_captcha(self):
         captcha_image = self._driver.find_element(By.ID, "stickyImg")
         # locator = (By.XPATH, '/html/body/div/div/div/div/div[1]/form/div/div/div/div/div/div[6]/fieldset/div/div[2]/div[3]/input')
         # captcha_code_input = waitUntil(self._driver, expected_conditions.presence_of_element_located(locator), 20)
 
         while captcha_image.is_displayed():
 
-            captcha_code = self.decode_captcha_image(captcha_image)
+            captcha_code = self._decode_captcha_image(captcha_image)
 
             logger.info("Entered Captcha Code: "+ captcha_code)
-            self.enter_captcha_code(captcha_code)
+            self._enter_captcha_code(captcha_code)
 
             time.sleep(3)
 
@@ -175,7 +175,7 @@ class Scraper:
             logger.debug("Clicked 'Search' button")
             time.sleep(3)
 
-    def scrap_details(self):
+    def _scrap_details(self):
 
         search_result_buttons = []
 
@@ -243,8 +243,8 @@ class Scraper:
 
         logger.info(f"Entered license number '{license_no}'")
 
-        self.solve_captcha()
-        self.scrap_details()
+        self._solve_captcha()
+        self._scrap_details()
 
     def quit(self):
         self._driver.quit()
