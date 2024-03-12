@@ -1,27 +1,36 @@
-# from modules.auto import execute
-import threading
+# Import necessary modules and functions
 from modules.utils import generateSequentialLicenseNumbers
+from configparser import ConfigParser
 from modules.scraper import Scraper
-from modules.constants import *
-import logging, os
+import logging, threading
 
-# Initialize logger
+# Initialize logger configuration
 logger = logging.getLogger(__name__)
 logging.basicConfig(format="%(asctime)s [%(levelname)s] --- %(message)s", level=logging.INFO)
 
-def scrap(*args):
-  output_dir = os.path.join(DATA_DIR, args[0])
-  scraper = Scraper(output_dir)
-  scraper.select(args[0])
-  for license_no in generateSequentialLicenseNumbers(*args[1]): 
-    scraper.scrap(license_no)
-  scraper.quit()
+# Read configuration from config.cfg file
+cfg = ConfigParser()
+cfg.read("config.cfg")
 
-scrapFirms = threading.Thread(target=scrap, args=('firm', (('F', 'G'), ('A', 'Z'), (1001, 9999))))
-scrapIndividuals = threading.Thread(target=scrap, args=('individual', (('I', 'J'), ('A', 'Z'), (1001, 9999))))
+def scrap(select: str, license_number_range: tuple):
+    # Initialize Scraper object with configuration
+    scraper = Scraper(cfg)
+    # Select the appropriate category
+    scraper.select(select)
+    # Iterate through sequential license numbers and scrape data
+    for license_no in generateSequentialLicenseNumbers(*license_number_range):
+        scraper.scrap(license_no)
+    # Quit the scraper instance
+    scraper.quit()
 
-scrapFirms.start()
-scrapIndividuals.start()
+# Create threads for scraping firms and individuals concurrently
+scrapFirmsThread = threading.Thread(target=scrap, args=('firm', (('F', 'G'), ('A', 'Z'), (1001, 9999))))
+scrapIndividualsThread = threading.Thread(target=scrap, args=('individual', (('I', 'J'), ('A', 'Z'), (1001, 9999))))
 
-scrapFirms.join()
-scrapIndividuals.join()
+# Start execution of threads
+scrapFirmsThread.start()
+scrapIndividualsThread.start()
+
+# Wait for threads to finish execution
+scrapFirmsThread.join()
+scrapIndividualsThread.join()

@@ -162,13 +162,14 @@ class Details:
             data_rows = table['data_rows']
 
             if len(data_rows) == 0:
-                logger.info(f"Empty table in '{title}'")
+                # logger.info(f"Empty table in '{title}'")
                 continue
 
             csv_row_dict.update({header_column: "" for header_column in header_columns})
+            csv_row_dict_keys = list(csv_row_dict.keys())
 
-            populateCSVRowDict(license_no, csv_row_dict.keys(), csv_row_dict, data_rows, is_multirow = title == 'PL')
-            generateCSV(csv_row_dict.keys(), csv_row_dict, os.path.join(output_dir, f"{title.lower()}.csv"))
+            populateCSVRowDict(license_no, csv_row_dict_keys, csv_row_dict, data_rows, is_multirow = title == 'PL')
+            generateCSV(csv_row_dict_keys, csv_row_dict, os.path.join(output_dir, f"{title.lower()}.csv"))
 
         csv_header_list = ["License No.", "Remark",]
         csv_row_dict = {"License No.": license_no, "Remark": "\n".join([f"{number}. {value}\n" for number, value in enumerate(self.R["items"], start=1)])}

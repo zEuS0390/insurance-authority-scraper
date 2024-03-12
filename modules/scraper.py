@@ -1,43 +1,53 @@
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.common.by import By
 from modules.ocr import ocr_with_color_filtering
-from selenium import webdriver
+from selenium.webdriver.common.by import By
+from configparser import ConfigParser
 from modules.details import Details
+from selenium import webdriver
 from modules.utils import *
-from modules.constants import *
 import time
 
 class Scraper:
 
     # Methods:
     #     select                    (name: str)
-    #     _decode_captcha_image      (captcha_image: np.ndarray) -> str
-    #     _enter_captcha_code        (captcha_code: str)
-    #     _solve_captcha             ()
-    #     _scrap_details             ()
+    #     _decode_captcha_image     (captcha_image: np.ndarray) -> str
+    #     _enter_captcha_code       (captcha_code: str)
+    #     _solve_captcha            ()
+    #     _scrap_details            ()
     #     scrap                     (license_no: str)
     #     quit                      ()
 
-    def __init__(self, output_dir):
+    def __init__(self, cfg: ConfigParser):
         # Initialize Web Driver Options
         self._options = Options()
-        # self._options.add_argument("-headless")
+
+        if cfg.getboolean("process", "is_headless"):
+            self._options.add_argument("-headless")
 
         # Initialize Web Driver with FireFox
         self._driver = webdriver.Firefox(options = self._options)
 
+        self._name = None
+
         self._is_firm = False
-        self._output_dir = output_dir
+        self._output_dir = None
+
+        self._base_url = cfg.get("urls", "base")
+        self._data_dir = cfg.get("output", "data_dir")
 
     def select(self, name: str):
-
-        self._driver.get(BASE_URL)
 
         # Wait till the page is fully loaded before clicking 'Search for Firm' link
         if name == 'firm': self._is_firm = True
         elif name == 'individual': self._is_firm = False
         else: raise ValueError("name parameter must be 'firm' or 'individual'")
+
+        self._name = name
+        self._driver.get(self._base_url)
+        self._output_dir = os.path.join(self._data_dir, name)
+        self._is_running = True
 
         locator = (By.LINK_TEXT, 'Search for Firm' if self._is_firm else 'Search for Individual')
         select_button = waitUntil(self._driver, expected_conditions.presence_of_element_located(locator), 20)
@@ -138,7 +148,7 @@ class Scraper:
 
             captcha_code = self._decode_captcha_image(captcha_image)
 
-            logger.info("Entered Captcha Code: "+ captcha_code)
+            logger.info(f"[{self._name}] Entered Captcha Code: {captcha_code}")
             self._enter_captcha_code(captcha_code)
 
             time.sleep(3)
@@ -241,7 +251,7 @@ class Scraper:
         self.search_criteria_input_txt.clear()
         self.search_criteria_input_txt.send_keys(license_no)
 
-        logger.info(f"Entered license number '{license_no}'")
+        logger.info(f"[{self._name}] Entered license number '{license_no}'")
 
         self._solve_captcha()
         self._scrap_details()
