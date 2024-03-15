@@ -2,11 +2,14 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.firefox.options import Options
 from modules.ocr import ocr_with_color_filtering
 from selenium.webdriver.common.by import By
+from modules.utils.scraper_utils import *
 from configparser import ConfigParser
 from modules.details import Details
 from selenium import webdriver
-from modules.utils import *
 import time
+
+# Getting the root logger for logging messages.
+logger = logging.getLogger()
 
 class Scraper:
 
@@ -32,10 +35,8 @@ class Scraper:
         self._name = None
 
         self._is_firm = False
-        self._output_dir = None
 
         self._base_url = cfg.get("urls", "base")
-        self._data_dir = cfg.get("output", "data_dir")
 
     def select(self, name: str):
 
@@ -46,7 +47,6 @@ class Scraper:
 
         self._name = name
         self._driver.get(self._base_url)
-        self._output_dir = os.path.join(self._data_dir, name)
         self._is_running = True
 
         locator = (By.LINK_TEXT, 'Search for Firm' if self._is_firm else 'Search for Individual')
@@ -234,14 +234,16 @@ class Scraper:
             error_message = "Took too much time to load"
         )
 
+        details = Details()
+
         if container_search:
-            details = Details()
-            details.get(container_search)
-            details.saveCSV(self._output_dir)
+            details.fetch(container_search)
 
         # Close the popup window and switch back to the main window
         self._driver.close()
         self._driver.switch_to.window(main_window)
+
+        return details.get()
 
     def scrap(self, license_no):
 
@@ -254,7 +256,7 @@ class Scraper:
         logger.info(f"[{self._name}] Entered license number '{license_no}'")
 
         self._solve_captcha()
-        self._scrap_details()
+        return self._scrap_details()
 
     def quit(self):
         self._driver.quit()

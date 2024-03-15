@@ -3,7 +3,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
-from modules.utils import *
+from modules.utils.scraper_utils import *
 import time, logging
 
 # Getting the root logger for logging messages.
@@ -16,7 +16,7 @@ class Details:
     #     _get_table_content    (title: str, panel: WebElement) -> None
     #     _get_polii            (panel: WebElement) -> None
     #     _get_r                (panel: WebElement) -> None
-    #     get                   (container_search: WebElement) -> Nnoe
+    #     fetch                 (container_search: WebElement) -> Nnoe
     #     saveCSV               (output_dir: str) -> None
     
     # Constructor method to initialize instances of the class
@@ -127,7 +127,7 @@ class Details:
         items = panel_ordered_list.find_elements(By.TAG_NAME, "li")
         for item in items: self.R["items"].append(item.text)
 
-    def get(self, container_search):
+    def fetch(self, container_search):
         container_search_panels = container_search.find_elements(By.CLASS_NAME, "panel")
 
         self._get_polii(container_search_panels[0])
@@ -138,43 +138,13 @@ class Details:
         container_search_panels = container_search.find_elements(By.CLASS_NAME, "panel")
         self._get_r(container_search_panels[6])
 
-    def saveCSV(self, output_dir):
-        if output_dir is None: 
-            logger.error("Output directory is not provided.")
-            return
-        
-        output_dir = os.path.join(output_dir, "csv")
-
-        if not os.path.exists(output_dir): 
-            os.makedirs(output_dir)
-
-        POLII_items = dict(self.POLII["items"])
-        license_no = POLII_items["Licence No."]
-
-        csv_header_list = POLII_items.keys()
-        csv_row_dict = POLII_items
-        generateCSV(csv_header_list, csv_row_dict, os.path.join(output_dir, 'polii.csv'))
-
-        csv_row_dict = {"License No.": license_no}
-        for title in ("AWCAP", "PL", "COL", "PDAL5", "N"):
-            table = getattr(self, title)
-            header_columns = table['header_columns']
-            data_rows = table['data_rows']
-
-            if len(data_rows) == 0:
-                # logger.info(f"Empty table in '{title}'")
-                continue
-
-            csv_row_dict.update({header_column: "" for header_column in header_columns})
-            csv_row_dict_keys = list(csv_row_dict.keys())
-
-            try:
-                populateCSVRowDict(license_no, csv_row_dict_keys, csv_row_dict, data_rows, is_multirow = title == 'PL')
-                generateCSV(csv_row_dict_keys, csv_row_dict, os.path.join(output_dir, f"{title.lower()}.csv"))
-            except Exception as e:
-                logger.info(f"ERROR [{e}]: {csv_row_dict}")
-
-        csv_header_list = ["License No.", "Remark",]
-        csv_row_dict = {"License No.": license_no, "Remark": "\n".join([f"{number}. {value}\n" for number, value in enumerate(self.R["items"], start=1)])}
-
-        generateCSV(csv_header_list, csv_row_dict, os.path.join(output_dir, 'r.csv'))
+    def get(self) -> dict[str, any]:
+        return {
+            "POLII": self.POLII, 
+            "AWCAP": self.AWCAP, 
+            "PL": self.PL, 
+            "COL": self.COL, 
+            "PDAL5": self.PDAL5, 
+            "N": self.N, 
+            "R": self.R
+        }
