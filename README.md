@@ -1,6 +1,6 @@
 # 🌐 Insurance Authority Scraper
 
-The project is an automated web scraper built to assist in obtaining large data from a third-party website. By harnessing the power of automation, the web scraper is poised to significantly enhance productivity, empowering the user with seamless access to comprehensive information.
+The project is an automated web scraper built to assist in obtaining large amounts of data from the https://iir.ia.org.hk/ website. By harnessing the power of automation, the web scraper is poised to significantly enhance productivity, empowering users with seamless access to comprehensive information. Please note that any data obtained from the website belongs to its owner. This project is funded by Tsz Ngong Conrad Ko.
 
 ## ❓ How to Use It?
 Before running the program, make sure to download and install the following:
