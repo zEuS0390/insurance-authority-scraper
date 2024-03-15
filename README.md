@@ -9,6 +9,8 @@ Before running the program, make sure to download and install the following:
 
 - **Tesseract-OCR:** Install Tesseract-OCR to solve scan and read CAPTCHA images. You can find installation instructions on the [Tesseract-OCR GitHub page](https://github.com/UB-Mannheim/tesseract/wiki) for Windows. Ensure Tesseract-OCR is properly installed and accessible from the command line.
 
+- **MongoDB Server:** Download and install the MongoDB server to store the data that was scraped from the website. You can download the MongoDB Server from [here](https://www.mongodb.com/try/download/community).
+
 ### 1. Create a Virtual Environment
 In this project, we are using virtualenv to manage dependencies and the virtual environment. Before executing the following command to create the virtual environment, ensure that virtualenv is installed on your system. You can do this by running the following command in your terminal or command prompt:
 ```
@@ -56,6 +58,7 @@ pip install -r requirements.txt
 - Selenium
 - Pytesseract
 - OpenCV
+- PyMongo
 
 ### 4. Run the main entry point of the program
 To start and run the main entry point of the program, execute the following command in your activated virtual environment:
