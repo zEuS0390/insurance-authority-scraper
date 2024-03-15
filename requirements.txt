@@ -2,3 +2,4 @@ selenium>=4.18.1
 pytesseract>=0.3.10
 opencv-python>=4.9.0.80
 opencv-python-headless>=4.9.0.80
+pymongo>=4.6.2
