@@ -47,7 +47,7 @@ def populateCSVRowDict(
 
         if is_multirow:
             # Add license number in the row values
-            row_values = (license_no,) + row_values
+            row_values = [license_no,] + row_values
             # The flag will be True if the columns at the beginning are blank strings
             multirow_flag = all(map(lambda index: row_values[index] == '', range(start_loop_index-1, 0, -1)))
             if multirow_flag is not True: 

@@ -67,7 +67,7 @@ class Details:
         # Extract data cells from the table.
         for data_row in rows:
             data_cells = data_row.find_elements(By.TAG_NAME, "td")
-            if len(data_cells) > 0: table["data_rows"].append(tuple([data_cell.text for data_cell in data_cells]))
+            if len(data_cells) > 0: table["data_rows"].append([data_cell.text for data_cell in data_cells])
 
     # Function to extract content for 'Particulars of Licensed Insurance Intermediary' (POLII) section.
     def _get_polii(self, panel: WebElement):

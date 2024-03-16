@@ -29,11 +29,8 @@ def saveCSV(details: dict[str, any], output_dir: str):
         csv_row_dict.update({header_column: "" for header_column in header_columns})
         csv_row_dict_keys = list(csv_row_dict.keys())
 
-        try:
-            populateCSVRowDict(license_no, csv_row_dict_keys, csv_row_dict, data_rows, is_multirow = title == 'PL')
-            generateCSV(csv_row_dict_keys, csv_row_dict, os.path.join(output_dir, f"{title.lower()}.csv"))
-        except Exception as e:
-            logger.info(f"ERROR [{e}]: {csv_row_dict}")
+        populateCSVRowDict(license_no, csv_row_dict_keys, csv_row_dict, data_rows, is_multirow = title == 'PL')
+        generateCSV(csv_row_dict_keys, csv_row_dict, os.path.join(output_dir, f"{title.lower()}.csv"))
 
     csv_header_list = ["License No.", "Remark",]
     csv_row_dict = {"License No.": license_no, "Remark": "\n".join([f"{number}. {value}\n" for number, value in enumerate(details["R"]["items"], start=1)])}
