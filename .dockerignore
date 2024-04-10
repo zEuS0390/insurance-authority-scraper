@@ -1,0 +1,5 @@
+.git/
+.venv/
+*.rar
+*.mp4
+*.zip
